@@ -1,12 +1,18 @@
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { meetups, messages } from '@/data/mockData';
-import { ArrowLeft, MapPin, Clock, Users, Star, Send, Share2 } from 'lucide-react';
+import { ArrowLeft, MapPin, Clock, Users, Star, Send, Share2, CheckCircle2, Flag, Ban, Navigation } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 const MeetupDetail = () => {
   const { id } = useParams();
@@ -58,6 +64,13 @@ const MeetupDetail = () => {
           <span className="flex items-center gap-1.5"><Star className="h-4 w-4 fill-primary text-primary" /> {meetup.rating}</span>
         </div>
 
+        {/* Budget info */}
+        {meetup.budget && (
+          <div className="mb-6 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-secondary text-secondary-foreground text-sm font-medium">
+            💰 Budget: {meetup.budget} per person
+          </div>
+        )}
+
         {/* Description */}
         <div className="bg-card rounded-2xl p-6 border border-border mb-6" style={{ boxShadow: 'var(--shadow-card)' }}>
           <h2 className="font-serif font-semibold text-lg mb-2">About</h2>
@@ -66,16 +79,74 @@ const MeetupDetail = () => {
 
         {/* Host */}
         <div className="bg-card rounded-2xl p-6 border border-border mb-6" style={{ boxShadow: 'var(--shadow-card)' }}>
-          <h2 className="font-serif font-semibold text-lg mb-4">Hosted by</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-serif font-semibold text-lg">Hosted by</h2>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="text-xs text-muted-foreground">
+                  ⋯
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => toast({ title: '🚩 Reported', description: 'This user has been reported. We will review.' })}>
+                  <Flag className="h-4 w-4 mr-2" /> Report User
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => toast({ title: '🚫 Blocked', description: 'This user has been blocked.' })}>
+                  <Ban className="h-4 w-4 mr-2" /> Block User
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
           <div className="flex items-center gap-3">
             <div className="h-12 w-12 rounded-full gradient-warm flex items-center justify-center">
               <span className="text-lg font-bold text-primary-foreground">{meetup.creator.name.charAt(0)}</span>
             </div>
             <div>
-              <p className="font-semibold">{meetup.creator.name}</p>
-              <p className="text-xs text-muted-foreground">{meetup.creator.meetupsCreated} meetups hosted · ⭐ {meetup.creator.rating}</p>
+              <div className="flex items-center gap-1.5">
+                <p className="font-semibold">{meetup.creator.name}</p>
+                {meetup.creator.verified && (
+                  <CheckCircle2 className="h-4 w-4 text-primary" />
+                )}
+              </div>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <span className="flex items-center gap-0.5"><Star className="h-3 w-3 fill-primary text-primary" /> {meetup.creator.rating} rating</span>
+                <span>·</span>
+                <span>{meetup.creator.meetupsCreated} meetups hosted</span>
+              </div>
             </div>
           </div>
+        </div>
+
+        {/* Participants */}
+        {meetup.participants && meetup.participants.length > 0 && (
+          <div className="bg-card rounded-2xl p-6 border border-border mb-6" style={{ boxShadow: 'var(--shadow-card)' }}>
+            <h2 className="font-serif font-semibold text-lg mb-4">Participants ({meetup.participants.length})</h2>
+            <div className="flex flex-wrap gap-3">
+              {meetup.participants.map((p, i) => (
+                <div key={i} className="flex items-center gap-2 bg-muted/50 rounded-xl px-3 py-2">
+                  <div className="h-8 w-8 rounded-full gradient-warm flex items-center justify-center">
+                    <span className="text-xs font-bold text-primary-foreground">{p.name.charAt(0)}</span>
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-1">
+                      <span className="text-sm font-medium">{p.name}</span>
+                      {p.verified && <CheckCircle2 className="h-3 w-3 text-primary" />}
+                    </div>
+                    <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
+                      <Star className="h-2.5 w-2.5 fill-primary text-primary" /> {p.rating}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Safety tools */}
+        <div className="flex gap-2 mb-6">
+          <Button variant="outline" className="rounded-xl text-sm" onClick={() => toast({ title: '📍 Location shared', description: 'Your location has been shared with meetup participants.' })}>
+            <Navigation className="h-4 w-4 mr-1.5" /> Share Location
+          </Button>
         </div>
 
         {/* Chat */}

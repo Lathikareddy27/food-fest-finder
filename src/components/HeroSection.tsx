@@ -23,14 +23,14 @@ const HeroSection = () => (
           </div>
 
           <h1 className="text-4xl md:text-6xl font-serif font-bold leading-tight mb-6">
-            Never Eat{' '}
-            <span className="text-gradient-warm">Alone</span>{' '}
-            Again
+            Find Food{' '}
+            <span className="text-gradient-warm">Companions</span>{' '}
+            Near You
           </h1>
 
           <p className="text-lg text-muted-foreground mb-8 max-w-md leading-relaxed">
-            Discover food meetups near you, connect with fellow foodies, 
-            and turn every meal into a social experience.
+            Meet new people and enjoy meals together. Discover food meetups, 
+            connect with fellow foodies, and never dine solo again.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-3 mb-8">

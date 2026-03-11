@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cuisineTypes } from '@/data/mockData';
-import { MapPin, Clock, Users, Utensils, ArrowLeft, Eye } from 'lucide-react';
+import { MapPin, Clock, Users, Utensils, ArrowLeft, IndianRupee } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 
@@ -15,6 +15,7 @@ const CreateMeetup = () => {
   const { toast } = useToast();
   const [form, setForm] = useState({
     title: '', restaurant: '', cuisine: '', location: '', date: '', time: '', maxPeople: '4', description: '',
+    budgetMin: '', budgetMax: '', genderPreference: 'anyone', ageGroup: 'any',
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -102,6 +103,50 @@ const CreateMeetup = () => {
                 <Input id="maxPeople" type="number" min="2" max="20" className="pl-10 h-11 rounded-xl"
                   value={form.maxPeople} onChange={e => setForm({...form, maxPeople: e.target.value})} required />
               </div>
+            </div>
+          </div>
+
+          {/* Budget */}
+          <div className="space-y-2">
+            <Label>Budget per person (₹)</Label>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="relative">
+                <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input placeholder="Min (e.g. 300)" className="pl-10 h-11 rounded-xl" type="number"
+                  value={form.budgetMin} onChange={e => setForm({...form, budgetMin: e.target.value})} />
+              </div>
+              <div className="relative">
+                <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input placeholder="Max (e.g. 500)" className="pl-10 h-11 rounded-xl" type="number"
+                  value={form.budgetMax} onChange={e => setForm({...form, budgetMax: e.target.value})} />
+              </div>
+            </div>
+          </div>
+
+          {/* Gender & Age preferences */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Gender Preference <span className="text-xs text-muted-foreground">(optional)</span></Label>
+              <Select value={form.genderPreference} onValueChange={v => setForm({...form, genderPreference: v})}>
+                <SelectTrigger className="h-11 rounded-xl"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="anyone">Anyone</SelectItem>
+                  <SelectItem value="male">Male only</SelectItem>
+                  <SelectItem value="female">Female only</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Age Group <span className="text-xs text-muted-foreground">(optional)</span></Label>
+              <Select value={form.ageGroup} onValueChange={v => setForm({...form, ageGroup: v})}>
+                <SelectTrigger className="h-11 rounded-xl"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="any">Any age</SelectItem>
+                  <SelectItem value="18-25">18–25</SelectItem>
+                  <SelectItem value="25-35">25–35</SelectItem>
+                  <SelectItem value="35+">35+</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
