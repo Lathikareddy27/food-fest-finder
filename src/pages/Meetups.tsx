@@ -5,7 +5,7 @@ import { meetups, cuisineTypes } from '@/data/mockData';
 import { Search, SlidersHorizontal, Plus, List, Map, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
 type ViewMode = 'list' | 'map';
