@@ -33,7 +33,9 @@ const Meetups = () => {
       (sizeFilter === 'small' && m.maxPeople <= 4) ||
       (sizeFilter === 'medium' && m.maxPeople > 4 && m.maxPeople <= 8) ||
       (sizeFilter === 'large' && m.maxPeople > 8);
-    return matchesSearch && matchesCuisine && matchesDistance && matchesSize;
+    const matchesLocation = !locationFilter || locationFilter === 'Near Me' ||
+      m.location.toLowerCase().includes(locationFilter.toLowerCase());
+    return matchesSearch && matchesCuisine && matchesDistance && matchesSize && matchesLocation;
   });
 
   const activeFilterCount = [timeFilter !== 'any', distanceFilter !== 'any', sizeFilter !== 'any'].filter(Boolean).length;
