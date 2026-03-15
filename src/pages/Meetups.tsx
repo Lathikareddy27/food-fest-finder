@@ -5,7 +5,7 @@ import { meetups, cuisineTypes } from '@/data/mockData';
 import { Search, SlidersHorizontal, Plus, List, Map, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
 type ViewMode = 'list' | 'map';
@@ -14,6 +14,8 @@ type DistanceFilter = 'any' | '1' | '2' | '5' | '10';
 type SizeFilter = 'any' | 'small' | 'medium' | 'large';
 
 const Meetups = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const locationFilter = searchParams.get('location') || '';
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCuisine, setActiveCuisine] = useState('All');
   const [viewMode, setViewMode] = useState<ViewMode>('list');
@@ -31,7 +33,9 @@ const Meetups = () => {
       (sizeFilter === 'small' && m.maxPeople <= 4) ||
       (sizeFilter === 'medium' && m.maxPeople > 4 && m.maxPeople <= 8) ||
       (sizeFilter === 'large' && m.maxPeople > 8);
-    return matchesSearch && matchesCuisine && matchesDistance && matchesSize;
+    const matchesLocation = !locationFilter || locationFilter === 'Near Me' ||
+      m.location.toLowerCase().includes(locationFilter.toLowerCase());
+    return matchesSearch && matchesCuisine && matchesDistance && matchesSize && matchesLocation;
   });
 
   const activeFilterCount = [timeFilter !== 'any', distanceFilter !== 'any', sizeFilter !== 'any'].filter(Boolean).length;
@@ -44,7 +48,19 @@ const Meetups = () => {
           <h1 className="text-3xl md:text-4xl font-serif font-bold mb-2">
             Explore <span className="text-gradient-warm">Meetups</span>
           </h1>
-          <p className="text-muted-foreground mb-6">Find food companions near you</p>
+          {locationFilter ? (
+            <div className="flex items-center gap-2 mb-6">
+              <span className="text-muted-foreground">Showing meetups in</span>
+              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-secondary text-secondary-foreground text-sm font-medium">
+                {locationFilter}
+                <button onClick={() => setSearchParams({})} className="ml-1 hover:text-primary">
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            </div>
+          ) : (
+            <p className="text-muted-foreground mb-6">Find food companions near you</p>
+          )}
 
           <div className="flex gap-3">
             <div className="relative flex-1">
