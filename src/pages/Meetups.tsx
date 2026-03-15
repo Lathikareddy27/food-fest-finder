@@ -48,7 +48,19 @@ const Meetups = () => {
           <h1 className="text-3xl md:text-4xl font-serif font-bold mb-2">
             Explore <span className="text-gradient-warm">Meetups</span>
           </h1>
-          <p className="text-muted-foreground mb-6">Find food companions near you</p>
+          {locationFilter ? (
+            <div className="flex items-center gap-2 mb-6">
+              <span className="text-muted-foreground">Showing meetups in</span>
+              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-secondary text-secondary-foreground text-sm font-medium">
+                {locationFilter}
+                <button onClick={() => setSearchParams({})} className="ml-1 hover:text-primary">
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            </div>
+          ) : (
+            <p className="text-muted-foreground mb-6">Find food companions near you</p>
+          )}
 
           <div className="flex gap-3">
             <div className="relative flex-1">
