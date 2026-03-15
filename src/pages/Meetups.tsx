@@ -14,6 +14,8 @@ type DistanceFilter = 'any' | '1' | '2' | '5' | '10';
 type SizeFilter = 'any' | 'small' | 'medium' | 'large';
 
 const Meetups = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const locationFilter = searchParams.get('location') || '';
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCuisine, setActiveCuisine] = useState('All');
   const [viewMode, setViewMode] = useState<ViewMode>('list');
