@@ -1,14 +1,19 @@
 import { useState } from 'react';
 import MeetupCard from '@/components/MeetupCard';
 import MapView from '@/components/MapView';
+import RestaurantCard from '@/components/RestaurantCard';
+import RestaurantMapView from '@/components/RestaurantMapView';
 import { meetups, cuisineTypes } from '@/data/mockData';
-import { Search, SlidersHorizontal, Plus, List, Map, X } from 'lucide-react';
+import { useRestaurants } from '@/hooks/useRestaurants';
+import { Search, SlidersHorizontal, Plus, List, Map, X, Loader2, UtensilsCrossed } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Link, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Skeleton } from '@/components/ui/skeleton';
 
 type ViewMode = 'list' | 'map';
+type ContentTab = 'restaurants' | 'meetups';
 type TimeFilter = 'any' | 'today' | 'tonight' | 'weekend';
 type DistanceFilter = 'any' | '1' | '2' | '5' | '10';
 type SizeFilter = 'any' | 'small' | 'medium' | 'large';
@@ -19,10 +24,14 @@ const Meetups = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCuisine, setActiveCuisine] = useState('All');
   const [viewMode, setViewMode] = useState<ViewMode>('list');
+  const [contentTab, setContentTab] = useState<ContentTab>('restaurants');
   const [showFilters, setShowFilters] = useState(false);
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('any');
   const [distanceFilter, setDistanceFilter] = useState<DistanceFilter>('any');
   const [sizeFilter, setSizeFilter] = useState<SizeFilter>('any');
+
+  // Fetch real restaurants when location is set
+  const { data: restaurantData, isLoading: loadingRestaurants, error: restaurantError } = useRestaurants(locationFilter);
 
   const filtered = meetups.filter(m => {
     const matchesSearch = m.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -38,7 +47,17 @@ const Meetups = () => {
     return matchesSearch && matchesCuisine && matchesDistance && matchesSize && matchesLocation;
   });
 
+  // Filter restaurants by search query and cuisine
+  const filteredRestaurants = (restaurantData?.restaurants || []).filter(r => {
+    const matchesSearch = !searchQuery || r.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      r.cuisine.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCuisine = activeCuisine === 'All' || r.cuisine.toLowerCase().includes(activeCuisine.toLowerCase());
+    const matchesDistance = distanceFilter === 'any' || r.distance_km <= Number(distanceFilter);
+    return matchesSearch && matchesCuisine && matchesDistance;
+  });
+
   const activeFilterCount = [timeFilter !== 'any', distanceFilter !== 'any', sizeFilter !== 'any'].filter(Boolean).length;
+  const hasLocation = !!locationFilter && locationFilter !== 'Near Me';
 
   return (
     <div className="min-h-screen pb-24 md:pb-8">
@@ -50,7 +69,7 @@ const Meetups = () => {
           </h1>
           {locationFilter ? (
             <div className="flex items-center gap-2 mb-6">
-              <span className="text-muted-foreground">Showing meetups in</span>
+              <span className="text-muted-foreground">Showing results in</span>
               <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-secondary text-secondary-foreground text-sm font-medium">
                 {locationFilter}
                 <button onClick={() => setSearchParams({})} className="ml-1 hover:text-primary">
@@ -124,7 +143,6 @@ const Meetups = () => {
                   className="text-xs text-primary font-medium">Clear all</button>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {/* Time */}
                 <div>
                   <p className="text-xs text-muted-foreground mb-2">Time</p>
                   <div className="flex flex-wrap gap-1.5">
@@ -136,7 +154,6 @@ const Meetups = () => {
                     ))}
                   </div>
                 </div>
-                {/* Distance */}
                 <div>
                   <p className="text-xs text-muted-foreground mb-2">Distance</p>
                   <div className="flex flex-wrap gap-1.5">
@@ -148,7 +165,6 @@ const Meetups = () => {
                     ))}
                   </div>
                 </div>
-                {/* Group Size */}
                 <div>
                   <p className="text-xs text-muted-foreground mb-2">Group Size</p>
                   <div className="flex flex-wrap gap-1.5">
@@ -165,6 +181,35 @@ const Meetups = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Content tabs when location is active */}
+      {hasLocation && (
+        <div className="px-6 py-3 border-b border-border bg-card">
+          <div className="max-w-7xl mx-auto flex gap-2">
+            <button
+              onClick={() => setContentTab('restaurants')}
+              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-2 ${
+                contentTab === 'restaurants'
+                  ? 'gradient-warm text-primary-foreground'
+                  : 'bg-muted text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <UtensilsCrossed className="h-4 w-4" />
+              Restaurants {loadingRestaurants ? '' : `(${filteredRestaurants.length})`}
+            </button>
+            <button
+              onClick={() => setContentTab('meetups')}
+              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                contentTab === 'meetups'
+                  ? 'gradient-warm text-primary-foreground'
+                  : 'bg-muted text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Meetups ({filtered.length})
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Cuisine filters */}
       <div className="px-6 py-4">
@@ -188,31 +233,102 @@ const Meetups = () => {
       {/* Content */}
       <div className="px-6 py-4">
         <div className="max-w-7xl mx-auto">
-          <p className="text-sm text-muted-foreground mb-4">{filtered.length} meetups found</p>
+          {/* Restaurant results */}
+          {hasLocation && contentTab === 'restaurants' && (
+            <>
+              {loadingRestaurants ? (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Searching real restaurants near {locationFilter}...
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {[1, 2, 3, 4, 5, 6].map(i => (
+                      <div key={i} className="bg-card rounded-2xl overflow-hidden border border-border">
+                        <Skeleton className="h-40 w-full" />
+                        <div className="p-4 space-y-2">
+                          <Skeleton className="h-5 w-3/4" />
+                          <Skeleton className="h-3 w-1/2" />
+                          <Skeleton className="h-3 w-2/3" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : restaurantError ? (
+                <div className="text-center py-16">
+                  <p className="text-4xl mb-3">⚠️</p>
+                  <p className="text-lg font-serif font-semibold mb-1">Could not load restaurants</p>
+                  <p className="text-sm text-muted-foreground">Try searching a different location</p>
+                </div>
+              ) : (
+                <>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    {filteredRestaurants.length} real restaurants near {locationFilter}
+                  </p>
 
-          {viewMode === 'list' ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filtered.map((meetup, i) => (
-                <motion.div
-                  key={meetup.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.05, duration: 0.3 }}
-                >
-                  <MeetupCard meetup={meetup} />
-                </motion.div>
-              ))}
-            </div>
-          ) : (
-            <MapView meetups={filtered} />
+                  {viewMode === 'list' ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {filteredRestaurants.map((restaurant, i) => (
+                        <motion.div
+                          key={restaurant.id}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: i * 0.05, duration: 0.3 }}
+                        >
+                          <RestaurantCard restaurant={restaurant} />
+                        </motion.div>
+                      ))}
+                    </div>
+                  ) : (
+                    <RestaurantMapView
+                      restaurants={filteredRestaurants}
+                      center={restaurantData?.center}
+                    />
+                  )}
+
+                  {filteredRestaurants.length === 0 && (
+                    <div className="text-center py-16">
+                      <p className="text-4xl mb-3">🍽️</p>
+                      <p className="text-lg font-serif font-semibold mb-1">No restaurants found</p>
+                      <p className="text-sm text-muted-foreground">Try a different search or location</p>
+                    </div>
+                  )}
+                </>
+              )}
+            </>
           )}
 
-          {filtered.length === 0 && (
-            <div className="text-center py-16">
-              <p className="text-4xl mb-3">🍽️</p>
-              <p className="text-lg font-serif font-semibold mb-1">No meetups found</p>
-              <p className="text-sm text-muted-foreground">Try a different search or create your own!</p>
-            </div>
+          {/* Meetup results (default or tab) */}
+          {(!hasLocation || contentTab === 'meetups') && (
+            <>
+              <p className="text-sm text-muted-foreground mb-4">{filtered.length} meetups found</p>
+
+              {viewMode === 'list' ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filtered.map((meetup, i) => (
+                    <motion.div
+                      key={meetup.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.05, duration: 0.3 }}
+                    >
+                      <MeetupCard meetup={meetup} />
+                    </motion.div>
+                  ))}
+                </div>
+              ) : (
+                <MapView meetups={filtered} />
+              )}
+
+              {filtered.length === 0 && (
+                <div className="text-center py-16">
+                  <p className="text-4xl mb-3">🍽️</p>
+                  <p className="text-lg font-serif font-semibold mb-1">No meetups found</p>
+                  <p className="text-sm text-muted-foreground">Try a different search or create your own!</p>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
