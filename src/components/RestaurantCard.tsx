@@ -1,20 +1,36 @@
-import { MapPin, Star, Phone, Globe, Clock } from 'lucide-react';
+import { MapPin, Star, Phone, Globe, Clock, Plus } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import type { Restaurant } from '@/types/restaurant';
 
 interface RestaurantCardProps {
   restaurant: Restaurant;
+  locationName?: string;
 }
 
-const RestaurantCard = ({ restaurant }: RestaurantCardProps) => {
+const RestaurantCard = ({ restaurant, locationName }: RestaurantCardProps) => {
+  const navigate = useNavigate();
+
+  const handleCreateMeetup = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const params = new URLSearchParams({
+      restaurant: restaurant.name,
+      cuisine: restaurant.cuisine,
+      location: locationName || restaurant.address,
+      lat: String(restaurant.lat),
+      lng: String(restaurant.lng),
+    });
+    navigate(`/create?${params.toString()}`);
+  };
+
   return (
     <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2 }}>
       <div
         className="bg-card rounded-2xl overflow-hidden border border-border hover:border-primary/30 transition-all duration-300"
         style={{ boxShadow: 'var(--shadow-card)' }}
       >
-        {/* Image */}
         <div className="relative overflow-hidden">
           <img
             src={restaurant.image_url}
@@ -38,7 +54,6 @@ const RestaurantCard = ({ restaurant }: RestaurantCardProps) => {
           <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-black/40 to-transparent" />
         </div>
 
-        {/* Content */}
         <div className="p-4">
           <h3 className="font-serif font-semibold text-lg leading-tight mb-1">
             {restaurant.name}
@@ -61,8 +76,7 @@ const RestaurantCard = ({ restaurant }: RestaurantCardProps) => {
             {restaurant.address}
           </p>
 
-          {/* Action links */}
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             {restaurant.phone && (
               <a
                 href={`tel:${restaurant.phone}`}
@@ -84,9 +98,13 @@ const RestaurantCard = ({ restaurant }: RestaurantCardProps) => {
               </a>
             )}
             <div className="flex-1" />
-            <div className="flex items-center gap-1 px-3 py-1.5 rounded-lg gradient-warm text-xs font-semibold text-primary-foreground">
-              <MapPin className="h-3 w-3" /> {restaurant.distance_km} km
-            </div>
+            <Button
+              size="sm"
+              onClick={handleCreateMeetup}
+              className="gradient-warm text-primary-foreground rounded-lg text-xs h-8 px-3"
+            >
+              <Plus className="h-3 w-3 mr-1" /> Create Meetup
+            </Button>
           </div>
         </div>
       </div>

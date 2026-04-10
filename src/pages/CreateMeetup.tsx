@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
@@ -8,20 +8,71 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { cuisineTypes } from '@/data/mockData';
 import { MapPin, Clock, Users, Utensils, ArrowLeft, IndianRupee } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthProvider';
+import { supabase } from '@/integrations/supabase/client';
 import { motion } from 'framer-motion';
 
 const CreateMeetup = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(false);
+
   const [form, setForm] = useState({
     title: '', restaurant: '', cuisine: '', location: '', date: '', time: '', maxPeople: '4', description: '',
     budgetMin: '', budgetMax: '', genderPreference: 'anyone', ageGroup: 'any',
+    lat: '', lng: '',
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Pre-fill from restaurant card query params
+  useEffect(() => {
+    const restaurant = searchParams.get('restaurant');
+    const cuisine = searchParams.get('cuisine');
+    const location = searchParams.get('location');
+    const lat = searchParams.get('lat');
+    const lng = searchParams.get('lng');
+    if (restaurant || cuisine || location) {
+      setForm(prev => ({
+        ...prev,
+        restaurant: restaurant || prev.restaurant,
+        cuisine: cuisine || prev.cuisine,
+        location: location || prev.location,
+        title: restaurant ? `Meetup at ${restaurant}` : prev.title,
+        lat: lat || prev.lat,
+        lng: lng || prev.lng,
+      }));
+    }
+  }, [searchParams]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast({ title: '🎉 Meetup Created!', description: 'Your food meetup is now live.' });
-    navigate('/meetups');
+    if (!user) {
+      toast({ title: 'Please sign in', description: 'You need to be logged in to create a meetup.', variant: 'destructive' });
+      navigate('/login');
+      return;
+    }
+    setLoading(true);
+    const meetupDate = new Date(`${form.date}T${form.time}`);
+    const { error } = await supabase.from('meetups').insert({
+      creator_id: user.id,
+      title: form.title,
+      description: form.description || null,
+      restaurant_name: form.restaurant,
+      cuisine: form.cuisine,
+      location: form.location,
+      lat: form.lat ? parseFloat(form.lat) : null,
+      lng: form.lng ? parseFloat(form.lng) : null,
+      meetup_date: meetupDate.toISOString(),
+      max_participants: parseInt(form.maxPeople),
+    });
+    setLoading(false);
+    if (error) {
+      toast({ title: 'Error creating meetup', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: '🎉 Meetup Created!', description: 'Your food meetup is now live.' });
+      navigate('/meetups');
+    }
   };
 
   return (
@@ -62,7 +113,7 @@ const CreateMeetup = () => {
             </div>
             <div className="space-y-2">
               <Label>Cuisine Type</Label>
-              <Select onValueChange={v => setForm({...form, cuisine: v})}>
+              <Select value={form.cuisine} onValueChange={v => setForm({...form, cuisine: v})}>
                 <SelectTrigger className="h-11 rounded-xl"><SelectValue placeholder="Select cuisine" /></SelectTrigger>
                 <SelectContent>
                   {cuisineTypes.filter(c => c !== 'All').map(c => (
@@ -106,7 +157,6 @@ const CreateMeetup = () => {
             </div>
           </div>
 
-          {/* Budget */}
           <div className="space-y-2">
             <Label>Budget per person (₹)</Label>
             <div className="grid grid-cols-2 gap-3">
@@ -123,7 +173,6 @@ const CreateMeetup = () => {
             </div>
           </div>
 
-          {/* Gender & Age preferences */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Gender Preference <span className="text-xs text-muted-foreground">(optional)</span></Label>
@@ -157,8 +206,8 @@ const CreateMeetup = () => {
           </div>
 
           <div className="flex gap-3 pt-4">
-            <Button type="submit" className="gradient-warm text-primary-foreground rounded-xl h-12 px-8 text-base font-semibold flex-1">
-              Create Meetup
+            <Button type="submit" disabled={loading} className="gradient-warm text-primary-foreground rounded-xl h-12 px-8 text-base font-semibold flex-1">
+              {loading ? 'Creating...' : 'Create Meetup'}
             </Button>
             <Button type="button" variant="outline" className="rounded-xl h-12 px-6" onClick={() => navigate(-1)}>
               Cancel

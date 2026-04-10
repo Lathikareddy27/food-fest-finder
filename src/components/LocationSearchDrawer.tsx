@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, MapPin, Navigation, Clock, Plus, Home, Briefcase, X } from 'lucide-react';
+import { Search, MapPin, Navigation, Clock, Home, Briefcase, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import {
   Drawer,
   DrawerContent,
   DrawerHeader,
   DrawerTitle,
 } from '@/components/ui/drawer';
-import { locations, type Location } from '@/data/locations';
+import { locations } from '@/data/locations';
 
 interface SavedAddress {
   id: string;
@@ -58,14 +59,19 @@ const LocationSearchDrawer = ({ open, onOpenChange }: LocationSearchDrawerProps)
     : [];
 
   const selectLocation = (locationName: string) => {
-    // Save to recent
     const updated = [locationName, ...recentSearches.filter((r) => r !== locationName)].slice(0, 5);
     setRecentSearches(updated);
     localStorage.setItem(RECENT_KEY, JSON.stringify(updated));
-
     onOpenChange(false);
     setQuery('');
     navigate(`/meetups?location=${encodeURIComponent(locationName)}`);
+  };
+
+  const handleSearchSubmit = (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (query.trim()) {
+      selectLocation(query.trim());
+    }
   };
 
   const clearRecent = () => {
@@ -80,11 +86,11 @@ const LocationSearchDrawer = ({ open, onOpenChange }: LocationSearchDrawerProps)
           <DrawerTitle className="font-serif text-lg">Search Location</DrawerTitle>
         </DrawerHeader>
 
-        <div className="px-4 pb-2">
+        <form onSubmit={handleSearchSubmit} className="px-4 pb-2">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search area, street, or city..."
+              placeholder="Search any area, city, or place..."
               className="pl-10 h-11 rounded-xl bg-muted/50"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -92,6 +98,7 @@ const LocationSearchDrawer = ({ open, onOpenChange }: LocationSearchDrawerProps)
             />
             {query && (
               <button
+                type="button"
                 onClick={() => setQuery('')}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
               >
@@ -99,9 +106,20 @@ const LocationSearchDrawer = ({ open, onOpenChange }: LocationSearchDrawerProps)
               </button>
             )}
           </div>
-        </div>
+        </form>
 
         <div className="overflow-y-auto px-4 pb-6 space-y-5">
+          {/* Search this location button - always visible when typing */}
+          {query.trim() && (
+            <Button
+              onClick={handleSearchSubmit}
+              className="w-full gradient-warm text-primary-foreground rounded-xl h-11 font-medium"
+            >
+              <Search className="h-4 w-4 mr-2" />
+              Search "{query.trim()}"
+            </Button>
+          )}
+
           {/* Use current location */}
           <button
             onClick={() => selectLocation('Near Me')}
@@ -116,10 +134,10 @@ const LocationSearchDrawer = ({ open, onOpenChange }: LocationSearchDrawerProps)
             </div>
           </button>
 
-          {/* Search results */}
+          {/* Matching predefined locations */}
           {query.trim() && filteredLocations.length > 0 && (
             <div>
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Results</p>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Suggestions</p>
               <div className="space-y-1">
                 {filteredLocations.map((loc) => (
                   <button
@@ -136,10 +154,6 @@ const LocationSearchDrawer = ({ open, onOpenChange }: LocationSearchDrawerProps)
                 ))}
               </div>
             </div>
-          )}
-
-          {query.trim() && filteredLocations.length === 0 && (
-            <p className="text-sm text-muted-foreground text-center py-4">No locations found</p>
           )}
 
           {/* Saved addresses */}
@@ -169,7 +183,6 @@ const LocationSearchDrawer = ({ open, onOpenChange }: LocationSearchDrawerProps)
                 </div>
               </div>
 
-              {/* Recent searches */}
               {recentSearches.length > 0 && (
                 <div>
                   <div className="flex items-center justify-between mb-2">

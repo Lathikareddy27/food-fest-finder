@@ -276,7 +276,7 @@ const Meetups = () => {
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: i * 0.05, duration: 0.3 }}
                         >
-                          <RestaurantCard restaurant={restaurant} />
+                          <RestaurantCard restaurant={restaurant} locationName={locationFilter} />
                         </motion.div>
                       ))}
                     </div>
@@ -284,6 +284,7 @@ const Meetups = () => {
                     <RestaurantMapView
                       restaurants={filteredRestaurants}
                       center={restaurantData?.center}
+                      locationName={locationFilter}
                     />
                   )}
 
