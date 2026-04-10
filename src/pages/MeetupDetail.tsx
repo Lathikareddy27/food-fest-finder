@@ -1,12 +1,11 @@
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { meetups, messages } from '@/data/mockData';
-import { ArrowLeft, MapPin, Clock, Users, Star, Send, Share2, CheckCircle2, Flag, Ban, Navigation } from 'lucide-react';
+import { ArrowLeft, MapPin, Clock, Users, Star, Share2, CheckCircle2, Flag, Ban, Navigation } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
+import ChatPanel from '@/components/ChatPanel';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,7 +17,6 @@ const MeetupDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [chatMsg, setChatMsg] = useState('');
   const meetup = meetups.find(m => m.id === id);
 
   if (!meetup) {
@@ -83,12 +81,10 @@ const MeetupDetail = () => {
             <h2 className="font-serif font-semibold text-lg">Hosted by</h2>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="text-xs text-muted-foreground">
-                  ⋯
-                </Button>
+                <Button variant="ghost" size="sm" className="text-xs text-muted-foreground">⋯</Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => toast({ title: '🚩 Reported', description: 'This user has been reported. We will review.' })}>
+                <DropdownMenuItem onClick={() => toast({ title: '🚩 Reported', description: 'This user has been reported.' })}>
                   <Flag className="h-4 w-4 mr-2" /> Report User
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => toast({ title: '🚫 Blocked', description: 'This user has been blocked.' })}>
@@ -104,9 +100,7 @@ const MeetupDetail = () => {
             <div>
               <div className="flex items-center gap-1.5">
                 <p className="font-semibold">{meetup.creator.name}</p>
-                {meetup.creator.verified && (
-                  <CheckCircle2 className="h-4 w-4 text-primary" />
-                )}
+                {meetup.creator.verified && <CheckCircle2 className="h-4 w-4 text-primary" />}
               </div>
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <span className="flex items-center gap-0.5"><Star className="h-3 w-3 fill-primary text-primary" /> {meetup.creator.rating} rating</span>
@@ -144,35 +138,14 @@ const MeetupDetail = () => {
 
         {/* Safety tools */}
         <div className="flex gap-2 mb-6">
-          <Button variant="outline" className="rounded-xl text-sm" onClick={() => toast({ title: '📍 Location shared', description: 'Your location has been shared with meetup participants.' })}>
+          <Button variant="outline" className="rounded-xl text-sm" onClick={() => toast({ title: '📍 Location shared' })}>
             <Navigation className="h-4 w-4 mr-1.5" /> Share Location
           </Button>
         </div>
 
-        {/* Chat */}
-        <div className="bg-card rounded-2xl border border-border overflow-hidden mb-6" style={{ boxShadow: 'var(--shadow-card)' }}>
-          <div className="p-4 border-b border-border">
-            <h2 className="font-serif font-semibold text-lg">Group Chat</h2>
-          </div>
-          <div className="p-4 space-y-3 max-h-64 overflow-y-auto">
-            {messages.map(msg => (
-              <div key={msg.id} className="flex items-start gap-2">
-                <div className="h-7 w-7 rounded-full gradient-warm flex items-center justify-center shrink-0">
-                  <span className="text-[10px] font-bold text-primary-foreground">{msg.senderName.charAt(0)}</span>
-                </div>
-                <div>
-                  <p className="text-xs font-semibold">{msg.senderName} <span className="font-normal text-muted-foreground">{msg.timestamp}</span></p>
-                  <p className="text-sm text-muted-foreground">{msg.text}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="p-3 border-t border-border flex gap-2">
-            <Input placeholder="Type a message..." className="rounded-xl h-10" value={chatMsg} onChange={e => setChatMsg(e.target.value)} />
-            <Button size="icon" className="gradient-warm rounded-xl h-10 w-10 shrink-0">
-              <Send className="h-4 w-4 text-primary-foreground" />
-            </Button>
-          </div>
+        {/* Real-time Chat */}
+        <div className="mb-6">
+          <ChatPanel meetupId={id || ''} />
         </div>
 
         {/* Join button */}
